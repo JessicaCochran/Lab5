@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <script type="text/javascript" src="https://d3js.org/d3.v7.min.js"></script>
+    <script type="text/javascript" src="https://d3js.org/topojson.v3.min.js"></script>
+    <style>
+        .tooltip {
+            position: absolute;
+            background-color: #ffffff;
+            padding: 5px;
+            border: 1px solid #333;
+            border-radius: 4px;
+            font-size: 12px;
+            pointer-events: none;
+            opacity: 0;
+        }
+    </style>
+</head>
+
+<body>
+    <svg width="1500" height="1500"></svg>
+    <div class="tooltip"></div>
+
+    <script>
+        // Demonstrates the d3 map infrastructure for plotting maps given in 
+        // GeoJSON format
+
+        // Load the world map data
+        d3.json("world_map.json").then(function(geo_json) {
+            // set up the projection and its mapping to the display
+            let projection = d3.geoEquirectangular()
+                .fitSize([1200, 1200], geo_json);
+
+            // create a SVG path generator
+            let generator = d3.geoPath()
+                .projection(projection);
+
+            // create svg symbol, set offset for the plot
+            let svg = d3.select("svg")
+                .attr('transform', 'translate(50, 50)');
+            
+            // put it in a group
+            let plot = svg.append("g");
+
+            // define tooltip
+            const tooltip = d3.select(".tooltip");
+
+            // Add the paths to the plot. The features key can hold 
+			// multiple path data which is iterated through in the 
+			// following code
+            plot.selectAll('paths')
+                .data(geo_json.features)
+                .enter()
+                .append('path')
+                .attr('d', generator)
+                .attr('stroke', '#333')
+                .attr('fill', '#cce5df')
+                .attr('stroke-width', 0.5)
+
+                // tooltip interaction event listeners
+                .on("mouseover", (event, d) => {
+                    tooltip.transition().duration(200).style("opacity", 1);
+                    tooltip.html(`Country: ${d.properties.name}`)
+                        .style("left", (event.pageX + 10) + "px")
+                        .style("top", (event.pageY - 20) + "px");
+                })
+                .on("mouseout", () => tooltip.transition().duration(200)
+											.style("opacity", 0))
+                .on("mousemove", (event) => {
+                    tooltip.style("left", (event.pageX + 10) + "px")
+                           .style("top", (event.pageY - 20) + "px");
+                });
+
+			d3.csv("cities.csv").then(function(city_data) {
+
+            // TODO:
+			// You will use the shared  file cities.csv to process and
+			// plot the cities on the world map. You will need to apply the
+			// projection() function on the longitude and latitude values (takes
+			// a 2 element array of the values) to
+			// plot the city at its correct location. You create a 
+			// small circle at that  position and a label for the city name.
+			// the tooltip will be created automatically based on the 
+			// data in the file.
+
+
+
+			// tooltip interaction event listeners
+			// TODO: The tooltip might require some adjustment to get to the
+			// data in the cities file
+			
+			const tooltip = d3.select(".tooltip");
+			plot.selectAll("circle")
+				.on("mouseover", (event, d) => {
+					tooltip.transition().duration(200).style("opacity", 1);
+					tooltip.html(`<b>Name: ${d.name}</b><br>City: ${d.city}<br>Lat: ${d.lat}<br>Long: ${d.long}`)
+					.style("left", (event.pageX + 10) + "px")
+					.style("top", (event.pageY - 20) + "px");
+				})
+				.on("mouseout", () => tooltip.transition().duration(200).style("opacity", 0))
+				.on("mousemove", (event) => {
+					tooltip.style("left", (event.pageX + 10) + "px")
+						.style("top", (event.pageY - 20) + "px");
+				});
+			});
+
+            // Call zoom/pan functionality
+            zoom(svg, plot);
+        });
+
+        // Zoom/pan functionality
+        function zoom(svg, plot) {
+            svg.call(d3.zoom()
+                .scaleExtent([0.5, 10])
+                .on("zoom", (event) => {
+                    plot.attr("transform", event.transform);
+                })
+            );
+        }
+    </script>
+</body>
+</html>
